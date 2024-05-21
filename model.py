@@ -88,3 +88,10 @@ class Yolov1(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Linear(496, S * S * (C + B * 5)), # (S, S, 30) where C + B * 5 = 30
         )
+        
+def test(split_size = 7, num_boxes = 2, num_classes = 20):
+    model = Yolov1(split_size=split_size, num_boxes=num_boxes, num_classes=num_classes)
+    x = torch.randn((2, 448, 448, 3))
+    print(model(x).shape)
+    
+test()
