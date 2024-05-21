@@ -78,3 +78,13 @@ class Yolov1(nn.Module):
                     in_channels = conv2[1]
                     
         return nn.Sequential(*layers)
+    
+    def _create_fcs(self, split_size, num_boxes, num_classes):
+        S, B, C = split_size, num_boxes, num_classes
+        return nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(1024 * S * S, 496), # In the original paper, it is 4096   
+            nn.Dropout(0.0),
+            nn.LeakyReLU(0.1),
+            nn.Linear(496, S * S * (C + B * 5)), # (S, S, 30) where C + B * 5 = 30
+        )
