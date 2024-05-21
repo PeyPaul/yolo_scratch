@@ -59,6 +59,7 @@ class Yolov1(nn.Module):
                     CNNBlock(
                         in_channels, x[1], kernel_size=x[0], stride=x[2], padding=x[3],
                     )]
+                in_channels = x[1]
             elif type(x) == str:
                 layers += [nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))] # 2x2 maxpool with stride 2. If not working, try changing 2 by (2,2)
             elif type(x) == list:
@@ -75,7 +76,7 @@ class Yolov1(nn.Module):
                         CNNBlock(
                             conv1[1], conv2[1], kernel_size=conv2[0], stride=conv2[2], padding=conv2[3]
                         )]
-                    in_channels = conv2[1]
+                    in_channels = conv2[1] # Update the in_channels to the last output channels
                     
         return nn.Sequential(*layers)
     
@@ -91,7 +92,7 @@ class Yolov1(nn.Module):
         
 def test(split_size = 7, num_boxes = 2, num_classes = 20):
     model = Yolov1(split_size=split_size, num_boxes=num_boxes, num_classes=num_classes)
-    x = torch.randn((2, 448, 448, 3))
+    x = torch.randn((2, 3, 448, 448))
     print(model(x).shape)
     
-test()
+#test()
