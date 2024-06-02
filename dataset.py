@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 
 class VOCDataset(torch.utils.data.Dataset):
-    def __init__(self, csv_file, img_dir, label_dir, S=7, B=2, C=20, transform=None):
+    def __init__(self, csv_file, img_dir, label_dir, S=7, B=2, C=20, transform=None): # S is the number of grid cells, B is the number of boxes per grid cell, C is the number of classes
         self.annotations = pd.read_csv(csv_file)
         self.img_dir = img_dir
         self.label_dir = label_dir
@@ -12,3 +12,27 @@ class VOCDataset(torch.utils.data.Dataset):
         self.S = S
         self.B = B
         self.C = C
+        
+    def __len__(self):
+        return len(self.annotations)
+    
+    def __getitem__(self, index):
+        label_path = os.path.join(self.label_dir, self.annotations.iloc[index, 1])
+        boxes = []
+        with open(label_path) as f:
+            for label in f.readlines():
+                class_label, x, y, width, height = [
+                    float(x) if float(x) != int(float(x)) else int(x)
+                    for x in label.replace("\n", "").split()
+                ]
+                boxes.append([class_label, x, y, width, height])
+        
+        img_path = os.path.join(self.img_dir, self.annotations.iloc[index, 0])
+        image = Image.open(img_path)
+        boxes = torch.tensor(boxes)
+        
+        if self.transform:
+            image, boxes = self.transform(image, boxes)
+        
+        # Convert To Cells
+        label_matrix = torch.zeros((self.S, self.S, self.C + 5 * self.B))
