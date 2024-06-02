@@ -1,0 +1,4 @@
+En ce qui concerne les données, il est possible de télécharger l'entièreté du dataset à https://www.kaggle.com/datasets/734b7bcb7ef13a045cbdd007a3c19874c2586ed0b02b4afc86126e89d00af8d2/data
+Ou alors on peut le télécharger d'une autre manière en utilisant les fichiers 'get_data' et 'generate_csv.py'
+
+La précision et la loss sont sauvegardé dans le fichier "progress_file.csv"
