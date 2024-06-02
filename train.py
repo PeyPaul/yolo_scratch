@@ -15,7 +15,7 @@ from utils import (
     plot_image,
     save_checkpoint,
     load_checkpoint,
-    check_class_accuracy, # is it really necessary?
+    #check_class_accuracy, # is it really necessary?
 )
 
 from loss import YoloLoss
@@ -45,7 +45,7 @@ class Compose(object):
         for t in self.transforms:
             img, bboxes = t(img), bboxes
 
-        return img, bboxes # is it really necessary?
+        return img, bboxes
     
 transform = Compose([transforms.Resize((448, 448)), transforms.ToTensor()])
 
@@ -70,7 +70,7 @@ def train_fn(train_loader, model, optimizer, loss_fn):
 def main():
     model = Yolov1(split_size=7, num_boxes=2, num_classes=20).to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-    looss_fn = YoloLoss()
+    loss_fn = YoloLoss()
     
     if LOAD_MODEL:
         load_checkpoint(torch.load(LOAD_MODEL_FILE), model, optimizer)
@@ -89,7 +89,7 @@ def main():
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         shuffle=True,
-        drop_last=True, # can be changed to False
+        drop_last=False, 
     )
     
     train_loader = DataLoader(
@@ -98,7 +98,7 @@ def main():
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         shuffle=True,
-        drop_last=True, # can be changed to False
+        drop_last=True, 
     )
     
     for epochs in range(EPOCHS):
