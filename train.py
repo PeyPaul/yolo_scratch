@@ -20,6 +20,7 @@ from utils import (
 
 from loss import YoloLoss
 
+# Set seed for reproducibility
 seed = 123
 torch.manual_seed(seed)
 
@@ -37,6 +38,40 @@ IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
 
 
+# Import CSV file to track training progress
+
+import csv
+
+progress_file = "progress_file.csv"
+
+# Ouvrir le fichier en mode écriture
+with open(progress_file, mode='w', newline='') as fichier_csv:
+    writer = csv.writer(fichier_csv)
+
+###################
+
+
+
+## Import WandB for tracking
+#
+#import wandb
+#import random
+#
+## start a new wandb run to track this script
+#wandb.init(
+#    # set the wandb project where this run will be logged
+#    project="segmentation-project",
+#
+#    # track hyperparameters and run metadata
+#    config={
+#    "learning_rate": LEARNING_RATE,
+#    "epochs": 100
+#    }
+#)
+#
+#####################
+
+
 class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
@@ -49,7 +84,7 @@ class Compose(object):
     
 transform = Compose([transforms.Resize((448, 448)), transforms.ToTensor()])
 
-def train_fn(train_loader, model, optimizer, loss_fn):
+def train_fn(train_loader, model, optimizer, loss_fn, mean_avg_prec):
     loop = tqdm(train_loader, leave=True)
     mean_loss = []
 
@@ -64,6 +99,12 @@ def train_fn(train_loader, model, optimizer, loss_fn):
 
         # update progress bar
         loop.set_postfix(loss=loss.item())
+    
+    # log metrics to wandb
+    #wandb.log({"Mean average precision": float(mean_avg_prec),"Mean loss": sum(mean_loss)/len(mean_loss)})
+    
+    # write metrics to csv file
+    writer.writerow([float(mean_avg_prec), ";", sum(mean_loss)/len(mean_loss)])
 
     print(f"Mean loss was {sum(mean_loss)/len(mean_loss)}")
     
@@ -107,7 +148,9 @@ def main():
         
         print(f"Mean average precision: {mean_avg_prec}")
         
-        train_fn(train_loader, model, optimizer, loss_fn)
+        #wandb.log({"Mean average precision": mean_avg_prec})
+        
+        train_fn(train_loader, model, optimizer, loss_fn, mean_avg_prec)
         
 if __name__ == "__main__":
     main()
