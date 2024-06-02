@@ -38,17 +38,8 @@ IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
 
 
-# Import CSV file to track training progress
-
-import csv
-
-progress_file = "progress_file.csv"
-
-# Ouvrir le fichier en mode écriture
-with open(progress_file, mode='w', newline='') as fichier_csv:
-    writer = csv.writer(fichier_csv)
-
-###################
+# creation of a list to save the values of the mean average precision and the mean loss
+saved_values = []
 
 
 
@@ -103,8 +94,8 @@ def train_fn(train_loader, model, optimizer, loss_fn, mean_avg_prec):
     # log metrics to wandb
     #wandb.log({"Mean average precision": float(mean_avg_prec),"Mean loss": sum(mean_loss)/len(mean_loss)})
     
-    # write metrics to csv file
-    writer.writerow([float(mean_avg_prec), ";", sum(mean_loss)/len(mean_loss)])
+    # add the values into the list
+    saved_values.append([float(mean_avg_prec), sum(mean_loss)/len(mean_loss)])
 
     print(f"Mean loss was {sum(mean_loss)/len(mean_loss)}")
     
@@ -154,3 +145,20 @@ def main():
         
 if __name__ == "__main__":
     main()
+    
+
+# Import CSV file to track training progress
+
+import csv
+
+progress_file = "progress_file.csv"
+
+# Ouvrir le fichier en mode écriture
+with open(progress_file, mode='w', newline='') as fichier_csv:
+    writer = csv.writer(fichier_csv, delimiter=';')
+    writer.writerow(['Epoch', 'Mean Average Precision', 'Mean Loss'])
+
+    # write the values in a csv file, line by line
+    for epoch, valeur in enumerate(saved_values):
+        writer.writerow([epoch, valeur[0], valeur[1]])
+        
