@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
 import csv
 
-progress_file = "progress_file.csv"
+progress_file = "progress_file_second_loss.csv"
 
 # Ouvrir le fichier en mode écriture
 with open(progress_file, mode='w', newline='') as fichier_csv:
