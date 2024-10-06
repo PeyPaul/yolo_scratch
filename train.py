@@ -29,10 +29,10 @@ LEARNING_RATE = 2e-5
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
 WEIGHT_DECAY = 0
-EPOCHS = 2
+EPOCHS = 1
 NUM_WORKERS = 2
 PIN_MEMORY = True
-LOAD_MODEL = False
+LOAD_MODEL = True
 LOAD_MODEL_FILE = "overfit.pth.tar"
 IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
@@ -134,10 +134,29 @@ def main():
     )
     
     for epochs in range(EPOCHS):
+        for x, y in train_loader:
+            x = x.to(DEVICE)
+            for idx in range(8):
+                bboxes = cellboxes_to_boxes(model(x))
+                bboxes = non_max_suppression(bboxes[idx], iou_threshold=0.5, threshold=0.4)
+                plot_image(x[idx].permute(1,2,0).to("cpu"), bboxes)
+            
+            import sys
+            sys.exit()
+        
         pred_boxes, target_boxes = get_bboxes(train_loader, model, iou_threshold=0.5, threshold=0.4)
         mean_avg_prec = mean_average_precision(pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint")
         
         print(f"Mean average precision: {mean_avg_prec}")
+        
+        if mean_avg_prec > 0:
+            checkpoint = {
+                "state_dict":model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+            }
+            save_checkpoint(checkpoint, filename=LOAD_MODEL_FILE)
+            import time 
+            time.sleep(10)
         
         #wandb.log({"Mean average precision": mean_avg_prec})
         
@@ -151,7 +170,7 @@ if __name__ == "__main__":
 
 import csv
 
-progress_file = "progress_file_second_loss.csv"
+progress_file = "progress_file.csv"
 
 # Ouvrir le fichier en mode écriture
 with open(progress_file, mode='w', newline='') as fichier_csv:
@@ -161,4 +180,3 @@ with open(progress_file, mode='w', newline='') as fichier_csv:
     # write the values in a csv file, line by line
     for epoch, valeur in enumerate(saved_values):
         writer.writerow([epoch, valeur[0], valeur[1]])
-        
