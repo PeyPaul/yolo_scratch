@@ -29,10 +29,11 @@ LEARNING_RATE = 2e-5
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
 WEIGHT_DECAY = 0
-EPOCHS = 1
+EPOCHS = 2
 NUM_WORKERS = 2
 PIN_MEMORY = True
 LOAD_MODEL = True
+SHOW_IMAGE = True
 LOAD_MODEL_FILE = "overfit.pth.tar"
 IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
@@ -40,27 +41,6 @@ LABEL_DIR = "data/labels"
 
 # creation of a list to save the values of the mean average precision and the mean loss
 saved_values = []
-
-
-
-## Import WandB for tracking
-#
-#import wandb
-#import random
-#
-## start a new wandb run to track this script
-#wandb.init(
-#    # set the wandb project where this run will be logged
-#    project="segmentation-project",
-#
-#    # track hyperparameters and run metadata
-#    config={
-#    "learning_rate": LEARNING_RATE,
-#    "epochs": 100
-#    }
-#)
-#
-#####################
 
 
 class Compose(object):
@@ -90,9 +70,6 @@ def train_fn(train_loader, model, optimizer, loss_fn, mean_avg_prec):
 
         # update progress bar
         loop.set_postfix(loss=loss.item())
-    
-    # log metrics to wandb
-    #wandb.log({"Mean average precision": float(mean_avg_prec),"Mean loss": sum(mean_loss)/len(mean_loss)})
     
     # add the values into the list
     saved_values.append([float(mean_avg_prec), sum(mean_loss)/len(mean_loss)])
@@ -124,7 +101,7 @@ def main():
         drop_last=False, 
     )
     
-    train_loader = DataLoader(
+    test_loader = DataLoader(
         dataset=test_dataset,
         batch_size=BATCH_SIZE,
         num_workers=NUM_WORKERS,
@@ -134,22 +111,23 @@ def main():
     )
     
     for epochs in range(EPOCHS):
-        for x, y in train_loader:
-            x = x.to(DEVICE)
-            for idx in range(8):
-                bboxes = cellboxes_to_boxes(model(x))
-                bboxes = non_max_suppression(bboxes[idx], iou_threshold=0.5, threshold=0.4)
-                plot_image(x[idx].permute(1,2,0).to("cpu"), bboxes)
-            
-            import sys
-            sys.exit()
+        if SHOW_IMAGE:
+            for x, y in train_loader:
+                x = x.to(DEVICE)
+                for idx in range(8):
+                    bboxes = cellboxes_to_boxes(model(x))
+                    bboxes = non_max_suppression(bboxes[idx], iou_threshold=0.5, threshold=0.4)
+                    plot_image(x[idx].permute(1,2,0).to("cpu"), bboxes)
+                
+                import sys
+                sys.exit()
         
         pred_boxes, target_boxes = get_bboxes(train_loader, model, iou_threshold=0.5, threshold=0.4)
         mean_avg_prec = mean_average_precision(pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint")
         
         print(f"Mean average precision: {mean_avg_prec}")
         
-        if mean_avg_prec > 0:
+        if mean_avg_prec > 0.9:
             checkpoint = {
                 "state_dict":model.state_dict(),
                 "optimizer": optimizer.state_dict(),
@@ -157,8 +135,6 @@ def main():
             save_checkpoint(checkpoint, filename=LOAD_MODEL_FILE)
             import time 
             time.sleep(10)
-        
-        #wandb.log({"Mean average precision": mean_avg_prec})
         
         train_fn(train_loader, model, optimizer, loss_fn, mean_avg_prec)
         
